@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🩺 Rapport PromptCare</title>
+<style>
+  /* ===== Design verrouillé PromptCare v2 — ne rien improviser =====
+     Palette verdict : sains #1B7F4B/#3FA36C · légère #B7791F/#D69E2E
+                       installée #C05621/#DD6B20 · sévère #B3261E/#D93025
+     Animations autorisées (UNIQUEMENT celles-ci, désactivées en print et
+     en prefers-reduced-motion) : remplissage jauge 1s · compteur de score
+     1s · apparition des cartes en cascade (fade-up 0,5s, +90ms par carte). */
+  :root{
+    --encre:#182430; --sous:#5A6B7B; --carte:#FFFFFF;
+    --bordure:#E3EAF0; --panneau:#F2F6F9;
+    --accent:#0E7C86; --accent2:#16A3AE;
+    --verdict:{{COULEUR_VERDICT}}; --verdict2:{{COULEUR_VERDICT_CLAIRE}};
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    color:var(--encre);line-height:1.55;font-size:15px;
+    background:linear-gradient(165deg,#F6FAFB 0%,#EDF3F6 45%,#E8F0F4 100%);
+    min-height:100vh;
+    padding:34px 16px;
+  }
+  .page{max-width:840px;margin:0 auto}
+  .carte{
+    background:var(--carte);border:1px solid var(--bordure);border-radius:16px;
+    padding:22px 26px;margin-bottom:18px;
+    box-shadow:0 2px 6px rgba(16,42,67,.08); /* ombre légère : les gros flous font ramer le rendu PDF headless */
+  }
+  /* Les animations ne s'activent QUE si le JS pose .anime sur <body> :
+     PDF, impression, lecteurs sans JS et reduced-motion restent statiques. */
+  .anime .carte{animation:surgir .5s ease-out backwards}
+  .anime .carte:nth-child(1){animation-delay:0ms}   .anime .carte:nth-child(2){animation-delay:90ms}
+  .anime .carte:nth-child(3){animation-delay:180ms} .anime .carte:nth-child(4){animation-delay:270ms}
+  .anime .carte:nth-child(5){animation-delay:360ms} .anime .carte:nth-child(6){animation-delay:450ms}
+  .anime .carte:nth-child(7){animation-delay:540ms} .anime .carte:nth-child(8){animation-delay:630ms}
+  .anime .carte:nth-child(n+9){animation-delay:720ms}
+  @keyframes surgir{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  /* En-tête : bandeau dégradé + bulles de nettoyage décoratives */
+  .entete{
+    position:relative;overflow:hidden;color:#fff;border:none;
+    background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 70%,#3EC1CC 100%);
+  }
+  .entete h1{font-size:27px;font-weight:800;letter-spacing:-.01em;position:relative}
+  .entete .date{opacity:.85;font-size:13px;margin-top:4px;position:relative}
+  .bulle{position:absolute;border-radius:50%;background:rgba(255,255,255,.14);pointer-events:none}
+  .b1{width:140px;height:140px;right:-36px;top:-52px}
+  .b2{width:64px;height:64px;right:120px;bottom:-24px;background:rgba(255,255,255,.10)}
+  .b3{width:26px;height:26px;right:96px;top:14px;background:rgba(255,255,255,.18)}
+
+  .meta{font-size:13.5px}
+  .meta div+div{margin-top:6px}
+  .meta b{color:var(--encre)}
+
+  /* Bloc score : jauge SVG dégradée + compteur */
+  .score{display:flex;align-items:center;gap:26px;flex-wrap:wrap}
+  .jauge{width:132px;height:132px;flex:none}
+  .jauge .fondc{stroke:#E8EEF3}
+  .jauge .arc{
+    stroke:url(#degradeVerdict);stroke-linecap:round;fill:none;
+    stroke-dasharray:{{DASH}} 326.7;   /* 326.7 = 2π×52 ; DASH = score/100 × 326.7 */
+    transform:rotate(-90deg);transform-origin:60px 60px;
+  }
+  .anime .jauge .arc{animation:remplir 1s ease-out}
+  @keyframes remplir{from{stroke-dasharray:0 326.7}}
+  .jauge text{font-size:31px;font-weight:800;fill:var(--encre);text-anchor:middle;font-variant-numeric:tabular-nums}
+  .jauge .sur{font-size:12px;font-weight:600;fill:var(--sous)}
+  .verdict{font-size:21px;font-weight:800;color:var(--verdict)}
+  .punch{color:var(--sous);margin-top:4px;max-width:34em}
+
+  h2{font-size:16.5px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  table{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;
+        border:1px solid var(--bordure);border-radius:10px;overflow:hidden}
+  th{background:var(--panneau);text-align:left;font-weight:600;color:var(--sous);
+     padding:8px 11px;white-space:nowrap;border-bottom:1px solid var(--bordure)}
+  td{padding:8px 11px;vertical-align:top;border-bottom:1px solid var(--bordure)}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:nth-child(even){background:#F8FAFC}
+  .etq{font-weight:700;white-space:nowrap}
+  .impact-Critique,.impact-Haut{color:#B3261E;font-weight:700}
+  .impact-Moyen{color:#C05621;font-weight:600}
+  .impact-Mineure,.impact-Faible{color:#5A6B7B}
+  .corriges{
+    background:linear-gradient(135deg,#EAF7EF,#F2FBF5);border:1px solid #BFE0CB;
+    border-radius:12px;padding:12px 16px;font-size:13.5px;margin-bottom:0
+  }
+  .corriges b{color:#1B7F4B}
+  ol.top3{padding-left:22px}
+  ol.top3 li{margin:7px 0;font-weight:600}
+  .audela,.pistes,.limites,.ecartes{font-size:14px}
+  .audela{margin-top:8px;color:var(--sous)}
+  .pistes .question{margin-top:10px;font-weight:600}
+  .detail{font-size:13px;font-variant-numeric:tabular-nums}
+  .detail div{margin:3px 0}
+  .detail .total{font-weight:800;border-top:1px solid var(--bordure);margin-top:9px;padding-top:9px}
+  footer{color:var(--sous);font-size:11.5px;text-align:center;padding:4px 0 10px}
+
+  @page{margin:16mm 14mm}
+  @media print{
+    body{background:#fff;padding:0;font-size:12.5px}
+    .carte{box-shadow:none;animation:none !important;break-inside:avoid;padding:16px 18px}
+    .jauge .arc{animation:none !important}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .anime .carte{animation:none}
+    .anime .jauge .arc{animation:none}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="carte entete">
+  <span class="bulle b1"></span><span class="bulle b2"></span><span class="bulle b3"></span>
+  <h1>🩺 Rapport PromptCare</h1>
+  <div class="date">{{DATE}}{{VERSION}}</div>
+</div>
+
+<div class="carte meta">
+  <div><b>Ce que j'ai examiné :</b> {{EXAMINE}}</div>
+  <div><b>Invisible d'ici :</b> {{INVISIBLE}}</div>
+  <div><b>Couverture :</b> {{COUVERTURE}}</div>
+</div>
+
+<div class="carte score">
+  <svg class="jauge" viewBox="0 0 120 120" role="img" aria-label="Score {{SCORE}} sur 100">
+    <defs>
+      <linearGradient id="degradeVerdict" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="var(--verdict)"/>
+        <stop offset="100%" stop-color="var(--verdict2)"/>
+      </linearGradient>
+    </defs>
+    <circle class="fondc" cx="60" cy="60" r="52" fill="none" stroke-width="11"/>
+    <circle class="arc" cx="60" cy="60" r="52" stroke-width="11"/>
+    <text x="60" y="66">{{SCORE}}</text>
+    <text class="sur" x="60" y="84">/100</text>
+  </svg>
+  <div>
+    <div class="verdict">{{VERDICT}}</div>
+    <div class="punch">{{PUNCH}}</div>
+  </div>
+</div>
+
+{{BLOC_CORRIGES}}
+
+<div class="carte">
+<h2>🔍 Problèmes détectés</h2>
+<table>
+  <thead><tr><th>#</th><th>Type</th><th>Impact</th><th>Constat</th><th>Extrait</th></tr></thead>
+  <tbody>
+{{LIGNES_PROBLEMES}}
+  </tbody>
+</table>
+</div>
+
+{{BLOC_OUTILLAGE}}
+
+<div class="carte">
+<h2>🎯 Top 3 actions</h2>
+<ol class="top3">
+{{LIGNES_TOP3}}
+</ol>
+{{AU_DELA}}
+</div>
+
+<div class="carte">
+<h2>💡 Outillage — pour aller plus loin</h2>
+<div class="pistes">{{PISTES}}
+<div class="question">Veux-tu que je t'aide à trouver le meilleur outillage (skills, plugins, connecteurs) adapté à ton usage ? Je te pose 2 questions et je cherche ce qui existe vraiment.</div>
+</div>
+</div>
+
+<div class="carte">
+<h2>🧭 Ce que ce score ne dit pas</h2>
+<div class="limites">{{LIMITES}}</div>
+</div>
+
+<div class="carte">
+<h2>🗂️ Fichiers écartés (pas des réglages)</h2>
+<div class="ecartes">{{ECARTES}}</div>
+</div>
+
+<div class="carte">
+<h2>🧮 Détail du score</h2>
+<div class="detail">
+{{LIGNES_DETAIL}}
+  <div class="total">Total : {{FORMULE_TOTALE}} → {{SCORE}}/100</div>
+</div>
+</div>
+
+<footer>Rapport généré par PromptCare · Yuki Solutions</footer>
+</div>
+
+<script>
+/* Active les animations CSS (jauge + cascade des cartes) à l'écran seulement.
+   Le CHIFFRE du score, lui, est statique par construction : un compteur JS
+   photographié en plein vol par un convertisseur PDF affiche un score faux
+   (vécu : 20 au lieu de 41) — on ne mute JAMAIS le texte du score. */
+(function(){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || matchMedia('print').matches) return;
+  document.body.classList.add('anime');
+})();
+</script>
+</body>
+</html>

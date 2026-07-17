@@ -1,0 +1,22 @@
+{
+  "name": "yuki",
+  "owner": {
+    "name": "Yuki Solutions",
+    "email": "contact@yukisolutions.fr",
+    "url": "https://www.yukisolutions.fr"
+  },
+  "metadata": {
+    "description": "Marketplace officielle des plugins Claude de Yuki Solutions.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "promptcare",
+      "source": "./promptcare",
+      "description": "Audite ta config Claude et fais le ménage avec toi. Noté sur 100.",
+      "version": "1.0.0",
+      "author": { "name": "Yuki Solutions", "url": "https://www.yukisolutions.fr" },
+      "keywords": ["audit", "claude-setup", "prompt-pollution", "clean-up", "score", "hygiene", "francais", "french"]
+    }
+  ]
+}

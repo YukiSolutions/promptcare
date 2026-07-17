@@ -1,0 +1,15 @@
+{
+  "name": "promptcare",
+  "displayName": "PromptCare by Yuki Solutions",
+  "version": "1.0.0",
+  "description": "Audite ta config Claude et fais le ménage avec toi. Noté sur 100.",
+  "author": {
+    "name": "Yuki Solutions",
+    "email": "contact@yukisolutions.fr",
+    "url": "https://www.yukisolutions.fr"
+  },
+  "homepage": "https://www.yukisolutions.fr",
+  "repository": "https://github.com/YukiSolutions/promptcare",
+  "license": "MIT",
+  "keywords": ["audit", "claude-setup", "prompt-pollution", "clean-up", "score", "configuration", "hygiene", "francais", "french"]
+}
